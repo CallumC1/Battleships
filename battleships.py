@@ -13,7 +13,7 @@ If a player hits a ship, that player can take another turn until they miss."""
 
 #SHIPS
 # 1x 2
-# 2x 3de
+# 2x 3
 # 2x 4
 # 1x 5
 
