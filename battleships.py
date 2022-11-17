@@ -1,4 +1,7 @@
 import random
+import colorama
+from colorama import Fore, Back, Style
+colorama.init()
 
 menu = """Welcome to battle ships
 You will be playing against the computer.
@@ -10,13 +13,21 @@ If a player hits a ship, that player can take another turn until they miss."""
 
 #SHIPS
 # 1x 2
-# 2x 3
+# 2x 3de
 # 2x 4
 # 1x 5
 
 # SHIP SELECTION
 
 computer_ships = [{"name": "rhib", "identifier": "R", "amount": 2 , "length": 1, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 1 , "length": 4, "width": 2}]
+
+computer_grid = []
+
+# Creates the editble matrix inside a 2D list.
+# 10 x 10 Grid
+for i in range(100):
+    computer_grid.append(" # ")
+
 
 # Displays what ships the user / computer can use.
 def display_ships():
@@ -32,21 +43,13 @@ def display_ships():
 
 def generate_computer_ships():
     # The random index this generates should be where the BOTTOM LEFT corner of the ship is (of the ship in default rotation).
-    random = random.randint(0, 99)
-    for ship in computer_ships:
-        if ship['amount'] > 0:
-            place_ship()
+
     pass
 
 
-computer_grid = []
 
-# Creates the editble matrix inside a 2D list.
-# 10 x 10 Grid
-for i in range(100):
-    computer_grid.append(" # ")
 
-# Generates the computers grid (Will be hidden from the playing user in the future).
+# Outputs the computers grid (Will be hidden from the playing user in the future).
 # Generates a 10 x 10 grid using 100 arrays
 def display_computer_grid():
     grid_piece = 0
@@ -102,24 +105,33 @@ def check_bounds(ship, index, direction):
             index -= 10
         return False, "No Error"
         
+# Totals up how many ships the user has to place down before the round can start.
+def total_ships():
+    total_ship_count = 0
+    for i in computer_ships:
+        total_ship_count += i['amount']
+    return total_ship_count
 
 
 # Allows the user or computer to place a ship at coordinates.
 def place_ship():
-    ships = 4
+    ships = total_ships()
+    print("TOTAL SHIPS:", ships)
+    
     while ships > 0:
-        print("You have started placing a ship.")
+        print("\nYou have started placing a ship.")
         ship = input("What ship do you want to place: ").lower()
 
-        ship_info = get_ship_info_by_name(ship, True)
+        ship_info = get_ship_info_by_name(ship, False)
 
         if ship_info != False and ship_info["amount"] > 0:
             print(f"You selected a {ship}.")
-            print("IMPORTANT:\nShips are placed using the bottom left corner.\n")
+            print(f"{Fore.RED}IMPORTANT: Ships are placed using the bottom left corner.{Style.RESET_ALL}\n")
             x = int(input("Ship cordinate X: "))
             y = int(input("Ship cordinate Y: "))
             index = coordinates_to_index(x, y)
 
+            #Checks whether the ship hits another ship or is too big to fit where placed.
             direction = "North" #? Should be able to be changed / ship rotated in future.
             bounds, error = check_bounds(ship, index, direction)
             if bounds:
@@ -130,19 +142,20 @@ def place_ship():
                 for i in range(ship_info['length']):
                     computer_grid[index] = f" {ship_info['identifier']} "
                     computer_grid[index + ship_info['width'] -1] = f" {ship_info['identifier']} "
-                    # if computer_grid[index + (ship_info['width'] -1)] != " # ":
                     index -= 10
-                    ships -= 1
+                
 
                 print(f"{ship} placed at ({x}, {y})")
+                ship_info["amount"] -= 1 # Removes 1 from the placed ship amount.
+                ships -= 1
                 display_computer_grid()
 
         elif ship_info == False:
             print("Invalid Ship, please pick a ship listed.")
-            place_ship()
+            
         else:
-            print("You dont have any of these ships left!")
-            place_ship()
+            print(f"{Fore.RED + 'You dont have any of these ships left!'}{Style.RESET_ALL}")
+            
 
     
 
@@ -152,21 +165,30 @@ def place_ship():
 # Used to check if a ship or part of a ship is at the selected coordinate.
 def check_ship(x, y):
     index = coordinates_to_index(x, y)
-    if computer_grid[index] != " # ":
-        print("Ship found!") #! Debug statement
-        return True
+    if computer_grid[index] == " X ":
+        return False, "Ship already sunk!"
+    elif computer_grid[index] != " # ":
+        # Ship found
+        return True, "Ship found!"
     else:
-        return False
+        return False, "No ship there captin!"
+
 
 def hunt():
-    print("You are firing a missile.\nPick a grid piece.")
-    x = int(input("Type the X coordinate of the grid: "))
-    y = int(input("Type the Y coordinate of the grid: "))
-    if check_ship(x, y):
-        print("\nBang! Ship Sunk.")
-        computer_grid[coordinates_to_index(x,y)] != " X "
-    else:
-        print("\nNo ship there captin!")
+    hunting = True
+    while hunting == True:
+        print("You are firing a missile.\nPick a grid piece.")
+        x = int(input("Type the X coordinate of the grid: "))
+        y = int(input("Type the Y coordinate of the grid: "))
+        ship, check_ship_msg = check_ship(x, y)
+        if ship:
+            print("\n", check_ship_msg)
+            computer_grid[coordinates_to_index(x,y)] = " X "
+            display_computer_grid()
+        else:
+            print("\n", check_ship_msg)
+            print("Computers turn! ")
+            hunting = False
 
 display_ships()
 
@@ -175,5 +197,6 @@ display_computer_grid()
 place_ship()
 
 hunt()
+
+print("END GRID:")
 display_computer_grid()
-hunt()
