@@ -12,32 +12,42 @@ In turns, each player will guess where the other player has placed their ships.
 If a player hits a ship, that player can take another turn until they miss."""
 
 #SHIPS
-# 1x 2
-# 2x 3
-# 2x 4
-# 1x 5
+# 2x1 - 3
+# 3x1 - 2
+# 4x2 - 2
 
 # SHIP SELECTION
 
-computer_ships = [{"name": "rhib", "identifier": "R", "amount": 2 , "length": 1, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 1 , "length": 4, "width": 2}]
+computer_ships = [{"name": "rhib", "identifier": "R", "amount": 3 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 2 , "length": 4, "width": 2}]
+player_ships = [{"name": "rhib", "identifier": "R", "amount": 3 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 2 , "length": 4, "width": 2}]
 
 computer_grid = []
+player_grid = []
 
 # Creates the editble matrix inside a 2D list.
 # 10 x 10 Grid
 for i in range(100):
     computer_grid.append(" # ")
+    player_grid.append(" # ")
 
 
 # Displays what ships the user / computer can use.
-def display_ships():
+def display_ships(user):
     print("\nAvailable Ships\n")
-    for ship in computer_ships:
-        print(f"Ship: {ship['name']}")
-        length = ship['length']
-        width = ship['width']
-        for i in range(length):
-            print("D" * width, end="\n")
+    if user == "computer":
+        for ship in computer_ships:
+            print(f"Ship: {ship['name']}")
+            length = ship['length']
+            width = ship['width']
+            for i in range(length):
+                print(f"{ship['identifier']}" * width, end="\n")
+    elif user == "player":
+        for ship in player_ships:
+            print(f"Ship: {ship['name']}")
+            length = ship['length']
+            width = ship['width']
+            for i in range(length):
+                print(f"{ship['identifier']}" * width, end="\n")
             
         
 
@@ -60,6 +70,18 @@ def display_computer_grid():
             grid_piece += 1
     print("\n")
 
+# Outputs the players grid 
+# Generates a 10 x 10 grid using 100 arrays
+def display_player_grid():
+    grid_piece = 0
+    for y in range(10):
+        print("\n", end="")
+        for x in range(10):
+            print(player_grid[grid_piece], end="")
+            grid_piece += 1
+    print("\n")
+
+
 # Takes the coordinates the user enters and turns it into the index of the selected grid piece.
 # E.g., The user enters X = 3 and Y = 4. This should return index 32.
 def coordinates_to_index(x, y): 
@@ -72,12 +94,12 @@ def coordinates_to_index(x, y):
 def get_ship_info_by_name(ship_name, print_info):
     for ship in computer_ships:
         if ship['name'] == ship_name:
-            # print(f"Index of {ship_name} is {ship}")
             if print_info == True:
                 print(f"Ship Information: \nName: {ship['name']} \nIdentifier: {ship['identifier']} \nLength: {ship['length']} \nWidth: {ship['width']} \nAmount: {ship['amount']}")
             return ship
     # If ship not found.
     return False
+
 
 # Checks whether a ship collides with another ship during placement.
 #! Currently doesnt support rotation.
@@ -190,9 +212,12 @@ def hunt():
             print("Computers turn! ")
             hunting = False
 
-display_ships()
+display_ships("computer")
 
 display_computer_grid()
+
+print("PLAYER GRID \n\n\n")
+display_player_grid()
 
 place_ship()
 
