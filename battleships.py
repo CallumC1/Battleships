@@ -63,14 +63,6 @@ def display_ships():
         # Prints the ships identifier out with its length * width.
         for i in range(length):
             print(f"{ship['identifier']}" * width, end="\n")
-            
-        
-
-def generate_computer_ships():
-    # The random index this generates should be where the BOTTOM LEFT corner of the ship is (of the ship in default rotation).
-
-    pass
-
 
 
 # Takes the coordinates the user enters and turns it into the index of the selected grid piece.
@@ -82,8 +74,13 @@ def coordinates_to_index(x, y):
     return index
 
 # Allows a ships info to be found by name with the option of also printing that formatted info.
-def get_ship_info_by_name(ship_name, print_info):
-    for ship in player_ships:
+def get_ship_info_by_name(ship_name, print_info, user):
+    if user == "player":
+        user_ships = player_ships
+    else:
+        user_ships = computer_ships
+
+    for ship in user_ships:
         if ship['name'] == ship_name:
             if print_info == True:
                 print(f"Ship Information: \nName: {ship['name']} \nIdentifier: {ship['identifier']} \nLength: {ship['length']} \nWidth: {ship['width']} \nAmount: {ship['amount']}")
@@ -101,25 +98,72 @@ def total_ships():
 
 # Checks whether a ship collides with another ship during placement.
 #! Currently doesnt support rotation.
-def check_bounds(ship, index, direction):
-    ship_info = get_ship_info_by_name(ship, False)
+def check_bounds(ship, index, direction, user):
+    ship_info = get_ship_info_by_name(ship, False, user)
     # Checks for other ships
     # Implements the checks for north facing ships
     # We are incrementing / decrementing the index by 10 to check above or below the ship by however far it extends.
+    if user == "player":
+        user = player_grid
+    else:
+        user = computer_grid
     if direction == "North":
         for i in range(ship_info['length']):
             if index < 0:
                 return True, "SHIP OUT OF BOUNDS"
             if ship_info['width'] > 1:
-                if computer_grid[index + (ship_info['width'] -1)] != " # ":
+                if user[index + (ship_info['width'] -1)] != " # ":
                     print(f"DEBUG (width): FOUND SHIP AT {index}")
                     return True, "THIS SPACE IS ALRADY TAKEN."
-            if computer_grid[index] != " # ":
+                if index % 10 == 9:
+                    print("TRIED INDEX: ", index)
+                    return True, "SHIP EXTENDS OUT OF BOUNDS" 
+                # if '9' in str(index):
+                #     print("TRIED INDEX: ", index)
+                #     return True, "SHIP EXTENDS OUT OF BOUNDS" 
+            if user[index] != " # ":
                 print(f"DEBUG: FOUND SHIP AT {index}")
                 return True, "THIS SPACE IS ALRADY TAKEN."
             index -= 10
         return False, "No Error"
     
+
+
+
+
+# Generates the computers ship placement.
+# The random index this generates should be where the BOTTOM LEFT corner of the ship is (of the ship in default rotation).
+def generate_computer_ships():
+    ships = total_ships()
+    direction = "North"
+    while ships > 0:
+        for ship in computer_ships:
+            if ship['amount'] > 0:
+                ship = ship['name']
+        
+            
+                ship_info = get_ship_info_by_name(ship, False, "computer")
+
+            
+                index = random.randint(0, 98)
+                bounds, error = check_bounds(ship, index, direction, "computer")
+                if bounds:
+                    print("COMPUTER (BOUNDS ERROR) - While placing ship")
+                    print("COMPUTER (Placement)", error)
+                else:
+                    print("Computer is placing", ship)
+                    for i in range(ship_info['length']):
+                        computer_grid[index] = f" {ship_info['identifier']} "
+                        computer_grid[index + ship_info['width'] -1] = f" {ship_info['identifier']} "
+                        index -= 10
+
+                    print(f"{ship} placed at ({index})")
+                    ship_info["amount"] -= 1 # Removes 1 from the selected ship amount.
+                    ships -= 1 #Removes 1 from total ships
+                    print("REMAINING SHIPS --> ", {ships})
+                
+
+
 
 
 
@@ -137,7 +181,7 @@ def place_ship():
 
         ship = input("Select a ship to place: ").lower()
 
-        ship_info = get_ship_info_by_name(ship, False)
+        ship_info = get_ship_info_by_name(ship, False, "player")
 
         # ship exists & user has ships left to place.
         if ship_info != False and ship_info["amount"] > 0:
@@ -149,7 +193,7 @@ def place_ship():
 
             #Checks whether the ship hits another ship or is too large to fit where placed.
             direction = "North" #? Should be able to be changed / ship rotated in future.
-            bounds, error = check_bounds(ship, index, direction)
+            bounds, error = check_bounds(ship, index, direction, "player")
             if bounds:
                 print(error)
             else:
@@ -205,6 +249,9 @@ def hunt():
             print("\n", check_ship_msg)
             print("Computers turn! ")
             hunting = False
+
+generate_computer_ships()
+
 
 print("Players ships:")
 display_ships()
