@@ -24,6 +24,10 @@ player_ships = [{"name": "rhib", "identifier": "R", "amount": 3 , "length": 2, "
 computer_grid = []
 player_grid = []
 
+# ship_groups is meant to group together each index of every ship, so that it can be used to detect fully sunk ships later on.
+computer_ship_groups = {}
+player_ship_groups = {}
+
 # Creates the editble matrix inside a 2D list.
 # 10 x 10 Grid
 for i in range(100):
@@ -115,12 +119,11 @@ def check_bounds(ship, index, direction, user):
                 if user[index + (ship_info['width'] -1)] != " # ":
                     print(f"DEBUG (width): FOUND SHIP AT {index}")
                     return True, "THIS SPACE IS ALRADY TAKEN."
+                # Check if ships with a width greater than 1 are placed in the 10th column.
+                # (Ship would go out of bounds if a ship with a width greater than 1 was placed here.)
                 if index % 10 == 9:
                     print("TRIED INDEX: ", index)
                     return True, "SHIP EXTENDS OUT OF BOUNDS" 
-                # if '9' in str(index):
-                #     print("TRIED INDEX: ", index)
-                #     return True, "SHIP EXTENDS OUT OF BOUNDS" 
             if user[index] != " # ":
                 print(f"DEBUG: FOUND SHIP AT {index}")
                 return True, "THIS SPACE IS ALRADY TAKEN."
@@ -140,37 +143,41 @@ def generate_computer_ships():
         for ship in computer_ships:
             if ship['amount'] > 0:
                 ship = ship['name']
-        
-            
+
                 ship_info = get_ship_info_by_name(ship, False, "computer")
 
-            
                 index = random.randint(0, 98)
                 bounds, error = check_bounds(ship, index, direction, "computer")
                 if bounds:
                     print("COMPUTER (BOUNDS ERROR) - While placing ship")
                     print("COMPUTER (Placement)", error)
                 else:
+                    ship_indexes = []
                     print("Computer is placing", ship)
                     for i in range(ship_info['length']):
                         computer_grid[index] = f" {ship_info['identifier']} "
                         computer_grid[index + ship_info['width'] -1] = f" {ship_info['identifier']} "
+                        # Stores the ships indexes into a array to be stored as a group later.
+                        ship_indexes.append(index)
+                        if ship_info['width'] > 1:
+                            ship_indexes.append((index + ship_info['width'] -1))
                         index -= 10
 
                     print(f"{ship} placed at ({index})")
                     ship_info["amount"] -= 1 # Removes 1 from the selected ship amount.
                     ships -= 1 #Removes 1 from total ships
-                    print("REMAINING SHIPS --> ", {ships})
-                
+                    # The code below creates a dictionary with the shipp name & amount as an identifier and stores which indexes it has taken up.
+                    # This will be used to check if a ship has been fully sunk or not.
+                    # the name and the amount left of the ship have been added to create a unique id.
+                    computer_ship_groups[ship_info['name'] + str(ship_info['amount'])] = [ship_indexes]
+                    print("DEBUG: REMAINING SHIPS --> ", {ships})
 
-
-
-
+    return computer_ship_groups
 
 # Allows the user to place a ship at selected coordinates.
 def place_ship():
     ships = total_ships()
-
+    display_player_grid()
     while ships > 0:
         print("- " * 10 + "\nSHIP PLACEMENT\n" + "- " * 10)
 
@@ -199,28 +206,34 @@ def place_ship():
             else:
                 # If check bounds returns false, that means that there are no collisions and a ship can be placed.
                 # loops through the length to place each block after the collisions are checked.
+                ship_indexes = []
                 for i in range(ship_info['length']):
                     player_grid[index] = f" {ship_info['identifier']} "
                     player_grid[index + ship_info['width'] -1] = f" {ship_info['identifier']} "
+                    # Stores the ships indexes into a array to be stored as a group later.
+                    ship_indexes.append(index)
+                    if ship_info['width'] > 1:
+                        ship_indexes.append((index + ship_info['width'] -1))
                     index -= 10
                 
 
                 print(f"{ship} placed at ({x}, {y})")
                 ship_info["amount"] -= 1 # Removes 1 from the selected ship amount.
-                ships -= 1 #Removes 1 from total ships
+                ships -= 1 
+                # The code below creates a dictionary with the shipp name & amount as an identifier and stores which indexes it has taken up.
+                # This will be used to check if a ship has been fully sunk or not.
+                # the name and the amount left of the ship have been added to create a unique id.
+                player_ship_groups[ship_info['name'] + str(ship_info['amount'])] = ship_indexes
                 display_player_grid()
+                
+                
 
         elif ship_info == False:
-            print("Invalid Ship, please pick a ship listed.")
-            
+            print("Invalid Ship, please pick a ship listed.")      
         else:
             print(f"{Fore.RED + 'You dont have any of these ships left!'}{Style.RESET_ALL}")
-            
-
     
-
-
-
+    return player_ship_groups   
 
 # Used to check if a ship or part of a ship is at the selected coordinate.
 def check_ship(x, y):
@@ -229,42 +242,85 @@ def check_ship(x, y):
         return False, "Ship already hit!"
     elif computer_grid[index] != " # ":
         # Ship found
+
+#! NOT WORKING PROPERLY
+        for values in player_ship_groups.values():
+            print(values)
+            for v in values:
+                print(v)
+                if computer_grid[v] != " X ":
+                    all_values_hit = False
+                else:
+                    all_values_hit = True
+
+            if all_values_hit == True:
+                for v in values:
+                    computer_grid[v] = " S "
+                
+        print("VALUES DEBUG: ", values)
+
         return True, "Ship found!"
     else:
         return False, "No ship there captin!"
 
+    
 
-def hunt():
+
+def player_hunt():
     hunting = True
     while hunting == True:
         print("You are firing a missile.\nPick a grid piece.")
         x = int(input("Type the X coordinate of the grid: "))
         y = int(input("Type the Y coordinate of the grid: "))
-        ship, check_ship_msg = check_ship(x, y)
-        if ship:
+        ship_found, check_ship_msg = check_ship(x, y)
+        if ship_found:
             print("\n", check_ship_msg)
             computer_grid[coordinates_to_index(x,y)] = " X "
             display_computer_grid()
         else:
             print("\n", check_ship_msg)
-            print("Computers turn! ")
             hunting = False
 
-generate_computer_ships()
+def check_game():
+    pass
+
+def game_master():
+    # randomly generate the computers ships.
+    generate_computer_ships()
+    # allows the player to place their ships.
+    place_ship()
+    print(computer_ship_groups)
+    print(player_ship_groups) #! DEBUG 
+
+    #? Could remove this. All this is useful for is the size of the ships...
+    print("Players ships:")
+    display_ships()
+
+    #! DEBUG CODE V
+    print("COMPUTER GRID \n\n")
+    display_computer_grid()
+    #! DEBUG CODE ^
+
+    print("PLAYER GRID \n\n")
+    display_player_grid()
+
+    game_started = True
+    while game_started:
+        print("Players Turn!\n")
+        player_hunt()
+
+        print("Computers turn! ")
+        print("TODO")
+    pass
 
 
-print("Players ships:")
-display_ships()
 
-print("COMPUTER GRID \n\n")
-display_computer_grid()
 
-print("PLAYER GRID \n\n")
-display_player_grid()
 
-place_ship()
+game_master()
 
-hunt()
+
 
 print("END GRID:")
 display_computer_grid()
+display_player_grid()
