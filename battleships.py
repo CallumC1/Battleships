@@ -169,7 +169,7 @@ def generate_computer_ships():
                     # The code below creates a dictionary with the shipp name & amount as an identifier and stores which indexes it has taken up.
                     # This will be used to check if a ship has been fully sunk or not.
                     # the name and the amount left of the ship have been added to create a unique id.
-                    computer_ship_groups[ship_info['name'] + str(ship_info['amount'])] = [ship_indexes]
+                    computer_ship_groups[ship_info['name'] + str(ship_info['amount'])] = ship_indexes
                     print("DEBUG: REMAINING SHIPS --> ", {ships})
 
     return computer_ship_groups
@@ -240,31 +240,35 @@ def check_ship(x, y):
     index = coordinates_to_index(x, y)
     if computer_grid[index] == " X ":
         return False, "Ship already hit!"
+    elif computer_grid[index] == " S ":
+        return False, "Ship already sunk!"
+
     elif computer_grid[index] != " # ":
         # Ship found
+        computer_grid[index] = " X "
 
-#! NOT WORKING PROPERLY
-        for values in player_ship_groups.values():
+        # Check if the ship has been fully sunk- Can be improved
+        for values in computer_ship_groups.values():
             print(values)
             for v in values:
                 print(v)
                 if computer_grid[v] != " X ":
-                    all_values_hit = False
+                    all_ship_values_hit = False
+                    break
                 else:
-                    all_values_hit = True
+                    all_ship_values_hit = True
 
-            if all_values_hit == True:
+            if all_ship_values_hit == True:
                 for v in values:
                     computer_grid[v] = " S "
+                return True, "Ship Sunk!"
                 
         print("VALUES DEBUG: ", values)
 
         return True, "Ship found!"
     else:
+        computer_grid[index] = " O "
         return False, "No ship there captin!"
-
-    
-
 
 def player_hunt():
     hunting = True
@@ -274,23 +278,20 @@ def player_hunt():
         y = int(input("Type the Y coordinate of the grid: "))
         ship_found, check_ship_msg = check_ship(x, y)
         if ship_found:
-            print("\n", check_ship_msg)
-            computer_grid[coordinates_to_index(x,y)] = " X "
             display_computer_grid()
+            print("\n" + check_ship_msg)
         else:
-            print("\n", check_ship_msg)
+            display_computer_grid()
+            print("\n" + check_ship_msg)
             hunting = False
 
-def check_game():
-    pass
+
 
 def game_master():
     # randomly generate the computers ships.
     generate_computer_ships()
     # allows the player to place their ships.
     place_ship()
-    print(computer_ship_groups)
-    print(player_ship_groups) #! DEBUG 
 
     #? Could remove this. All this is useful for is the size of the ships...
     print("Players ships:")
