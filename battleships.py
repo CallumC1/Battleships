@@ -235,6 +235,14 @@ def place_ship():
     
     return player_ship_groups   
 
+def check_game():
+    for values in computer_ship_groups.values():
+        for v in values:
+            if computer_grid[v] != " S ":
+                return False
+    return True
+                
+
 # Used to check if a ship or part of a ship is at the selected coordinate.
 def check_ship(x, y):
     index = coordinates_to_index(x, y)
@@ -245,30 +253,31 @@ def check_ship(x, y):
 
     elif computer_grid[index] != " # ":
         # Ship found
-        computer_grid[index] = " X "
+        computer_grid[index] = " X " # Sets the index to be marked as hit.
 
-        # Check if the ship has been fully sunk- Can be improved
         for values in computer_ship_groups.values():
-            print(values)
-            for v in values:
-                print(v)
-                if computer_grid[v] != " X ":
-                    all_ship_values_hit = False
-                    break
-                else:
-                    all_ship_values_hit = True
-
-            if all_ship_values_hit == True:
+            # Check if the ship has been fully sunk- Can be improved?
+            if index in values: # Reduces checks
                 for v in values:
-                    computer_grid[v] = " S "
-                return True, "Ship Sunk!"
-                
-        print("VALUES DEBUG: ", values)
+                    if computer_grid[v] != " X ":
+                        all_ship_values_hit = False
+                        break
+                    else:
+                        all_ship_values_hit = True
+
+                if all_ship_values_hit == True:
+                    for v in values:
+                        computer_grid[v] = " S "
+                    #! Add check for if all ships sunk here.
+                    return True, "Ship Sunk!"
+                    
 
         return True, "Ship found!"
     else:
         computer_grid[index] = " O "
         return False, "No ship there captin!"
+
+
 
 def player_hunt():
     hunting = True
@@ -280,11 +289,14 @@ def player_hunt():
         if ship_found:
             display_computer_grid()
             print("\n" + check_ship_msg)
+            if check_game(): #! OR HERE?
+                print("\nGame Over! All ships sunk. Player Wins!\n")
+                hunting = False
+                return False
         else:
             display_computer_grid()
             print("\n" + check_ship_msg)
             hunting = False
-
 
 
 def game_master():
@@ -308,15 +320,11 @@ def game_master():
     game_started = True
     while game_started:
         print("Players Turn!\n")
-        player_hunt()
-
+        if player_hunt() == False:
+            game_started = False
+            break
         print("Computers turn! ")
         print("TODO")
-    pass
-
-
-
-
 
 game_master()
 
