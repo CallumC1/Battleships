@@ -7,7 +7,7 @@ menu = """Welcome to battle ships!
 You will be playing against the computer.
 
 How it works:
-Each player has 7 ships to place on the grid.
+Each player has 5 ships to place on the grid.
 In turns, each player will guess where the other player has placed their ships.
 If a player hits a ship, that player can take another turn until they miss."""
 
@@ -18,8 +18,8 @@ If a player hits a ship, that player can take another turn until they miss."""
 
 # SHIP SELECTION
 
-computer_ships = [{"name": "rhib", "identifier": "R", "amount": 3 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 2 , "length": 4, "width": 2}]
-player_ships = [{"name": "rhib", "identifier": "R", "amount": 3 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 2 , "length": 4, "width": 2}]
+computer_ships = [{"name": "rhib", "identifier": "R", "amount": 2 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 1 , "length": 4, "width": 2}]
+player_ships = [{"name": "rhib", "identifier": "R", "amount": 2 , "length": 2, "width": 1}, {"name": "destroyer", "identifier": "D", "amount": 2 , "length": 3, "width": 1}, {"name": "carrier", "identifier": "C", "amount": 1 , "length": 4, "width": 2}]
 
 computer_grid = []
 player_grid = []
@@ -244,22 +244,26 @@ def check_game():
                 
 
 # Used to check if a ship or part of a ship is at the selected coordinate.
-def check_ship(x, y):
-    index = coordinates_to_index(x, y)
-    if computer_grid[index] == " X ":
+def check_ship(index, user):
+    if user == "player":
+        user = computer_grid
+    else:
+        user = player_grid
+
+    if user[index] == " X ":
         return False, "Ship already hit!"
-    elif computer_grid[index] == " S ":
+    elif user[index] == " S ":
         return False, "Ship already sunk!"
 
-    elif computer_grid[index] != " # ":
+    elif user[index] != " # ":
         # Ship found
-        computer_grid[index] = " X " # Sets the index to be marked as hit.
+        user[index] = " X " # Sets the index to be marked as hit.
 
         for values in computer_ship_groups.values():
             # Check if the ship has been fully sunk- Can be improved?
             if index in values: # Reduces checks
                 for v in values:
-                    if computer_grid[v] != " X ":
+                    if user[v] != " X ":
                         all_ship_values_hit = False
                         break
                     else:
@@ -267,8 +271,7 @@ def check_ship(x, y):
 
                 if all_ship_values_hit == True:
                     for v in values:
-                        computer_grid[v] = " S "
-                    #! Add check for if all ships sunk here.
+                        user[v] = " S "
                     return True, "Ship Sunk!"
                     
 
@@ -285,7 +288,8 @@ def player_hunt():
         print("You are firing a missile.\nPick a grid piece.")
         x = int(input("Type the X coordinate of the grid: "))
         y = int(input("Type the Y coordinate of the grid: "))
-        ship_found, check_ship_msg = check_ship(x, y)
+        check_index = coordinates_to_index(x, y)
+        ship_found, check_ship_msg = check_ship(check_index, "player")
         if ship_found:
             display_computer_grid()
             print("\n" + check_ship_msg)
@@ -297,6 +301,42 @@ def player_hunt():
             display_computer_grid()
             print("\n" + check_ship_msg)
             hunting = False
+
+comp_stats = {
+    "guesses": [],
+    "sunken": 0,
+    "hits": []
+}
+
+def computer_hunt(stats):
+    guesses = comp_stats["guesses"]
+    sunken = comp_stats["sunken"]
+    hits = comp_stats["hits"]
+    a = True
+    if len(guesses) < 1 or a == True:
+        fire_index = random.randint(0, 100) # Picks a random index to hit to start off.
+        result_bool, result_info = check_ship(fire_index, "computer")
+        if result_info == "Ship already hit!":
+            print("Computer - already hit ship -- SHOULDNT HAPPEN")
+
+        elif result_info == "Ship already sunk!":
+            print("Computer - ship already sunk")
+        
+        elif result_info == "Ship sunk!":
+            print("Computer - sunk a ship")
+            stats['sunken'] += 1
+
+        elif result_info == "Ship found!":
+            print("Computer - hit a ship")
+            stats['guesses'].append(fire_index)
+            stats['hits'].append(fire_index)
+
+            
+        elif result_info == "No ship there captin!":
+            comp_stats['guesses'].append(fire_index)
+    
+        else:
+            print(result_bool, result_info)
 
 
 def game_master():
@@ -324,7 +364,7 @@ def game_master():
             game_started = False
             break
         print("Computers turn! ")
-        print("TODO")
+        computer_hunt(comp_stats)
 
 game_master()
 
